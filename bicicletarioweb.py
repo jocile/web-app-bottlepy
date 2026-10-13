@@ -43,6 +43,12 @@ def cadastro_de_bicicleta():
     page = f'<h1>Web App</h1>{form}'
     return page
 
+def salvar_bicicleta(bicicletas):
+    with open('bicicletas.txt', 'a', encoding='utf-8') as file:
+        for bicicleta in bicicletas:
+            linha = f'{bicicleta.cor}|{bicicleta.modelo}|{bicicleta.valor}'
+            file.write(linha)
+
 @post('/process')
 def index_process():
     bicicletas = []
@@ -54,7 +60,7 @@ def index_process():
     bicicletas.append(Bicicleta(cor, modelo, ano, valor))
     
     # Salvar em um arquivo txt, ou em um banco de dados sqlite
-
+    salvar_bicicleta(bicicletas)
     message = f'A bicicleta {modelo} {cor}, de {ano} com valor {valor} foi adicionada!'
 
     return message

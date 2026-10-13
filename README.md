@@ -102,3 +102,7 @@ Projeto desenvolvido por profjocile.
 ## 📌 Licença
 
 Este projeto não contém uma licença explícita no repositório. Se for usar em ambiente acadêmico ou profissional, verifique antes de publicar ou redistribuir o código.
+
+## Atualizações
+
+[Atualizações](Atualizacoes.md)
