@@ -2,11 +2,11 @@ from bicicletario import Bicicleta
 from bottle import get, post, request, route, run
 
 
-def carregar_bicicletas():
+def carregar_bicicletas(nome_arquivo="bicicletas.txt"):
     """Carrega as bicicletas de um arquivo TXT"""
     bicicletas = []
     try:
-        with open('bicicletas.txt', 'r', encoding='utf-8') as f:
+        with open(nome_arquivo, 'r', encoding='utf-8') as f:
             for linha in f:
                 partes = linha.strip().split('|')
                 if len(partes) >= 4:
@@ -17,12 +17,22 @@ def carregar_bicicletas():
     return bicicletas
 
 
-def salvar_bicicletas(bicicletas):
+def salvar_bicicletas(bicicletas, nome_arquivo="bicicletas.txt"):
     """Salva as bicicletas em um arquivo TXT"""
-    with open('bicicletas.txt', 'w', encoding='utf-8') as f:
+    with open(nome_arquivo, 'w', encoding='utf-8') as f:
         for bicicleta in bicicletas:
             linha = f"{bicicleta.cor}|{bicicleta.modelo}|{bicicleta.ano}|{bicicleta.valor}\n"
             f.write(linha)
+
+
+def vender_bicicleta(bicicletas, bicicletas_vendidas, numero):
+    """Move uma bicicleta do estoque para a lista de bicicletas vendidas."""
+    if not 1 <= numero <= len(bicicletas):
+        raise ValueError("Número de bicicleta inválido.")
+
+    bicicleta = bicicletas.pop(numero - 1)
+    bicicletas_vendidas.append(bicicleta)
+    return bicicleta
 
 
 @route("/")
@@ -37,6 +47,10 @@ def index():
                     <a href="/mostrar">Mostrar informacoes da bicicleta</a>
                 <br>
                     <a href="/acoes">Acoes da bicicleta</a>
+                <br>
+                    <a href="/vender">Vender uma bicicleta</a>
+                <br>
+                    <a href="/vendidas">Mostrar bicicletas vendidas</a>
                 <br>
             '''
     page = f'''
@@ -107,25 +121,81 @@ def mostrar_bicicletas():
     return page
 
 
+@route("/vender")
+def pagina_venda():
+    bicicletas = carregar_bicicletas()
+    if not bicicletas:
+        return "<h1>Vender bicicleta</h1><p>Nenhuma bicicleta disponível para venda.</p>"
+
+    opcoes = "".join(
+        f'<option value="{i}">{bicicleta}</option>'
+        for i, bicicleta in enumerate(bicicletas, start=1)
+    )
+    return f'''
+        <h1>Vender bicicleta</h1>
+        <form action="/processar-venda" method="post">
+            <label for="numero">Escolha a bicicleta:</label>
+            <select id="numero" name="numero">{opcoes}</select>
+            <input type="submit" value="Vender">
+        </form>
+    '''
+
+
+@post("/processar-venda")
+def processar_venda():
+    bicicletas = carregar_bicicletas()
+    bicicletas_vendidas = carregar_bicicletas("bicicletas_vendidas.txt")
+    try:
+        numero = int(request.forms.get("numero"))
+    except (TypeError, ValueError):
+        return "<p>Número de bicicleta inválido.</p>"
+
+    try:
+        bicicleta = vender_bicicleta(bicicletas, bicicletas_vendidas, numero)
+    except ValueError as erro:
+        return f"<p>{erro}</p>"
+
+    salvar_bicicletas(bicicletas)
+    salvar_bicicletas(bicicletas_vendidas, "bicicletas_vendidas.txt")
+    return f"<p>Bicicleta vendida: {bicicleta}</p>"
+
+
+@route("/vendidas")
+def mostrar_bicicletas_vendidas():
+    bicicletas = carregar_bicicletas("bicicletas_vendidas.txt")
+    if not bicicletas:
+        return "<h1>Bicicletas vendidas</h1><p>Nenhuma bicicleta vendida.</p>"
+
+    itens = "".join(f"<li>{bicicleta}</li>" for bicicleta in bicicletas)
+    return f"<h1>Bicicletas vendidas</h1><ul>{itens}</ul>"
+
+
 @route("/acoes")
 def acoes_bicicletas():
-    bicicletas = []
+    bicicletas = carregar_bicicletas()
 
     form = '''
         <h1>Ações das Bicicletas</h1>
         <ul>
         '''
 
-    for i, bicicleta in enumerate(bicicletas):
-        form += f'''<li><strong>Bicicleta {i + 1}</strong>: Cor: {bicicleta.cor}, Modelo: {bicicleta.modelo}, Ano: {bicicleta.ano}, Valor: R${bicicleta.valor:.2f}<br>
+    for i, bicicleta in enumerate(bicicletas, start=1):
+        form += f'''<li><strong>Bicicleta {i}</strong>: Cor: {bicicleta.cor}, Modelo: {bicicleta.modelo}, Ano: {bicicleta.ano}, Valor: R${bicicleta.valor:.2f}<br>
             <button onclick=alert("Buzinar!");>Buzinar</button> 
             <button onclick=alert("Correr!");>Correr</button> 
-            <button onclick=alert("Parar!");>Parar</button></li>
+            <button onclick=alert("Parar!");>Parar</button>
+            <form action="/processar-venda" method="post" style="display:inline;">
+                <input type="hidden" name="numero" value="{i}">
+                <button type="submit">Vender</button>
+            </form></li>
         '''
+
+    if not bicicletas:
+        form += "<li>Nenhuma bicicleta cadastrada.</li>"
 
     form += "</ul>"
     page = f"<h1>Web App</h1>{form}"
     return page
 
 
-run(host="localhost", port=8080)
+run(host="localhost", port=8081)

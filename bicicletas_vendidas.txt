@@ -1,0 +1,2 @@
+preta|eletrica|2026|5000.0
+vermelha|caloi|2024|200.0

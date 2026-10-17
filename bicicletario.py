@@ -72,12 +72,31 @@ def menu():
                 bicicletas[num].correr()
                 bicicletas[num].parar()
             case "4":
+                if not bicicletas:
+                    print('Nenhuma bicicleta disponível para venda.')
+                    continue
+
+                for i, bicicleta in enumerate(bicicletas, start=1):
+                    print(f'{i}: {bicicleta}')
+
                 num = int(input('Entre com o número da bicicleta para vender: '))
-                bicicletas_vendidas.append(bicicletas[num-1])
-                bicicletas.remove(num-1)
-                print('Bicicleta vendida')
+                if 1 <= num <= len(bicicletas):
+                    bicicleta = vender_bicicleta(
+                        bicicletas, bicicletas_vendidas, num
+                    )
+                    print(f'Bicicleta vendida: {bicicleta}')
+                else:
+                    print('Número de bicicleta inválido.')
             case "5":
                 break
+
+
+def vender_bicicleta(bicicletas, bicicletas_vendidas, numero):
+    """Move uma bicicleta do estoque para a lista de bicicletas vendidas."""
+    bicicleta = bicicletas.pop(numero - 1)
+    bicicletas_vendidas.append(bicicleta)
+    return bicicleta
+
 
 if __name__ == "__main__":
     menu()
